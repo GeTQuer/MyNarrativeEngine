@@ -1,0 +1,24 @@
+
+{
+  "startNode": "start",
+  "nodes": [
+    {
+      "type": "dialogue",
+      "id": "start",
+      "speaker": "Robert",
+      "text": "Hello!",
+      "next": "end"
+    },
+    {
+      "type": "end",
+      "id": "end"
+    },
+    {
+      "type": "dialogue",
+      "id": "orphan",
+      "speaker": "Robert",
+      "text": "Nobody can reach me.",
+      "next": "end"
+    }
+  ]
+}

@@ -56,4 +56,46 @@ namespace narrative {
         return nodes_.at(currentId_.value());
     }
 
+    void NarrativeEngine::advance() {
+        const Node& node = current();
+
+        if (!holds_alternative<DialogueNode>(node)) {
+            throw logic_error("Current node is not a dialogue");
+        }
+
+        const DialogueNode& dialogueNode = get<DialogueNode>(node);
+        moveTo(dialogueNode.next);
+    }
+
+    void NarrativeEngine::selectChoice(size_t index) {
+        const Node& node = current();
+
+        if (!holds_alternative<ChoiceNode>(node)) {
+            throw logic_error("Current node is not a choice");
+        }
+
+        const ChoiceNode& choiceNode = get<ChoiceNode>(node);
+
+        if (index >= choiceNode.choices.size()) {
+            throw out_of_range("Invalid choice index");
+        }
+
+        const Choice& choice = choiceNode.choices[index];
+
+        moveTo(choice.next);
+    }
+
+    bool NarrativeEngine::isFinished() const {
+        if (!currentId_.has_value()) {
+            return false;
+        }
+
+        const Node& node = current();
+
+        return holds_alternative<EndNode>(node);
+    }
+
+    const unordered_map<string, Node> &NarrativeEngine::getNodes() const {
+        return nodes_;
+    };
 };

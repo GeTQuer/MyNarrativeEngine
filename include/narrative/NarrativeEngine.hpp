@@ -21,6 +21,8 @@ namespace narrative {
 
         bool isFinished() const; // диалог завершен?
 
+        const unordered_map<NodeId, Node>& getNodes() const; // получить узлы - для Validator
+
     private:
         unordered_map<NodeId, Node> nodes_; // хранилище узлов
 

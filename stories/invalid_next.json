@@ -1,0 +1,16 @@
+{
+  "startNode": "start",
+  "nodes": [
+    {
+      "type": "dialogue",
+      "id": "start",
+      "speaker": "Robert",
+      "text": "Hello!",
+      "next": "unknown"
+    },
+    {
+      "type": "end",
+      "id": "end"
+    }
+  ]
+}

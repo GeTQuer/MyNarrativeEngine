@@ -1,0 +1,44 @@
+{
+  "startNode": "start",
+  "nodes": [
+    {
+      "type": "dialogue",
+      "id": "start",
+      "speaker": "Robert",
+      "text": "Are you ready?",
+      "next": "choice1"
+    },
+    {
+      "type": "choice",
+      "id": "choice1",
+      "choices": [
+        {
+          "text": "Yes!",
+          "next": "yes"
+        },
+        {
+          "text": "No.",
+          "next": "no"
+        }
+      ]
+    },
+    {
+      "type": "dialogue",
+      "id": "yes",
+      "speaker": "Robert",
+      "text": "Let's go!",
+      "next": "end"
+    },
+    {
+      "type": "dialogue",
+      "id": "no",
+      "speaker": "Robert",
+      "text": "I'll wait.",
+      "next": "end"
+    },
+    {
+      "type": "end",
+      "id": "end"
+    }
+  ]
+}

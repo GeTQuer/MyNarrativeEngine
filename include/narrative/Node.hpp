@@ -34,7 +34,7 @@ namespace narrative {
          *Что выбрал игрок
          */
         NodeId id;
-        vector<Choice> choices;
+        vector<Choice>  choices;
     };
 
     struct EndNode {
