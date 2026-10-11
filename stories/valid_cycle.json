@@ -1,0 +1,31 @@
+
+{
+  "startNode": "start",
+  "nodes": [
+    {
+      "type": "dialogue",
+      "id": "start",
+      "speaker": "Robert",
+      "text": "Choose an option.",
+      "next": "choice1"
+    },
+    {
+      "type": "choice",
+      "id": "choice1",
+      "choices": [
+        {
+          "text": "Repeat",
+          "next": "start"
+        },
+        {
+          "text": "Finish",
+          "next": "end"
+        }
+      ]
+    },
+    {
+      "type": "end",
+      "id": "end"
+    }
+  ]
+}

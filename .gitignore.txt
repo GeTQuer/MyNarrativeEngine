@@ -1,0 +1,23 @@
+
+# CMake
+cmake-build-*/
+build/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# Binaries
+*.exe
+*.dll
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+
+# JetBrains
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
