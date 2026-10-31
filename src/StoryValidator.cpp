@@ -1,102 +1,137 @@
-//
-// Created by maxim_main on 11.10.2026.
-//
-
 #include "narrative/StoryValidator.hpp"
-#include <stdexcept>
-#include <format>
-#include <unordered_set>
-using namespace std;
+
+#include <type_traits>
+#include <utility>
+#include <variant>
 
 namespace narrative {
-    void StoryValidator::validate(const NarrativeEngine &engine, const NodeId& startId) {
-        const auto& nodes = engine.getNodes();
-        if (nodes.empty()) {
-            throw runtime_error("Story validation requested for empty nodes.");
+
+std::vector<std::string> StoryValidator::validate(
+    const NarrativeEngine& engine,
+    const NodeId& startId)
+{
+    std::vector<std::string> errors;
+    const auto& nodes = engine.getNodes();
+
+    if (nodes.empty()) {
+        errors.push_back("Story contains no nodes");
+        return errors;
+    }
+
+    bool hasEndNode = false;
+    bool hasBrokenLinks = false;
+
+    // 1. Проверяем структуру всех узлов
+    for (const auto& [key, nodeValue] : nodes) {
+
+        if (const auto* dialogue =
+                std::get_if<DialogueNode>(&nodeValue)) {
+
+            const NodeId& next = dialogue->next;
+
+            if (!nodes.contains(next)) {
+                errors.push_back(
+                    "DialogueNode {" + key +
+                    "} references unknown node {" + next + "}"
+                );
+
+                hasBrokenLinks = true;
+            }
         }
+        else if (const auto* choiceNode =
+                     std::get_if<ChoiceNode>(&nodeValue)) {
 
-        bool hasEndNode = false;
+            if (choiceNode->choices.empty()) {
+                errors.push_back(
+                    "ChoiceNode {" + key + "} has no choices"
+                );
+            }
 
-        for (const auto& [key,nodeValue] : nodes) {
-            if (holds_alternative<DialogueNode>(nodeValue)) {
-
-                const DialogueNode& dialogueNode = get<DialogueNode>(nodeValue);
-
-                const NodeId& next = dialogueNode.next;
-
+            for (const Choice& choice : choiceNode->choices) {
+                const NodeId& next = choice.next;
 
                 if (!nodes.contains(next)) {
-                    throw runtime_error(
-                        format("DialogueNode '{}' references unknown node '{}'", key, next)
-                        );
-                }
+                    errors.push_back(
+                        "ChoiceNode {" + key +
+                        "} references unknown node {" + next + "}"
+                    );
 
-
-            }else if (holds_alternative<ChoiceNode>(nodeValue)) {
-
-                const ChoiceNode& choiceNode = get<ChoiceNode>(nodeValue);
-
-                if (choiceNode.choices.empty()) {
-                    throw runtime_error(
-                        format("ChoiceNode {} has no choices", key)
-                        );
-                }
-                for (const Choice& choice: choiceNode.choices) {
-
-                    const NodeId& next = choice.next;
-
-                    if (!nodes.contains(next)) {
-                        throw runtime_error(
-                            format("ChoiceNode '{}' references unknown node '{}'", key, next)
-                            );
-                    }
-
-                }
-            }else if (holds_alternative<EndNode>(nodeValue)) {
-                hasEndNode = true;
-            }
-        }
-        if (!hasEndNode) {
-            throw runtime_error("Story contains no EndNode");
-        }
-        
-        unordered_set<NodeId> visited;
-        dfs(startId, nodes, visited);
-
-        if (visited.size() != nodes.size()) {
-            for (const auto& [id, node] : nodes) {
-                if (!visited.contains(id)) {
-                    throw runtime_error(format("Node '{}' is unreachable", id));
+                    hasBrokenLinks = true;
                 }
             }
+        }
+        else if (std::holds_alternative<EndNode>(nodeValue)) {
+            hasEndNode = true;
         }
     }
-    void StoryValidator::dfs
-    (
-        const string& currentId,
-        const unordered_map<NodeId, Node>& nodes,
-        unordered_set<NodeId>& visited)
-    {
-        if (visited.contains(currentId)) {
-            return;
+
+    // 2. Проверяем наличие EndNode
+    if (!hasEndNode) {
+        errors.push_back("Story contains no EndNode");
+    }
+
+    // 3. Проверяем начальный узел
+    if (!nodes.contains(startId)) {
+        errors.push_back(
+            "Start node {" + startId + "} does not exist"
+        );
+    }
+
+    // 4. Если ссылки или startId некорректны,
+    //    проверку достижимости пропускаем
+    if (hasBrokenLinks || !nodes.contains(startId)) {
+        return errors;
+    }
+
+    // 5. Проверяем достижимость через DFS
+    std::unordered_set<NodeId> visited;
+    dfs(startId, nodes, visited);
+
+    for (const auto& [id, node] : nodes) {
+        if (!visited.contains(id)) {
+            errors.push_back(
+                "Node {" + id + "} is unreachable"
+            );
+        }
+    }
+
+    return errors;
+}
+
+void StoryValidator::dfs(
+    const NodeId& currentId,
+    const std::unordered_map<NodeId, Node>& nodes,
+    std::unordered_set<NodeId>& visited)
+{
+    if (visited.contains(currentId)) {
+        return;
+    }
+
+    // Защита от несуществующего ID
+    if (!nodes.contains(currentId)) {
+        return;
+    }
+
+    visited.insert(currentId);
+
+    const Node& node = nodes.at(currentId);
+
+    std::visit([&](const auto& currentNode) {
+
+        using T = std::decay_t<decltype(currentNode)>;
+
+        if constexpr (std::is_same_v<T, DialogueNode>) {
+            dfs(currentNode.next, nodes, visited);
+        }
+        else if constexpr (std::is_same_v<T, ChoiceNode>) {
+            for (const Choice& choice : currentNode.choices) {
+                dfs(choice.next, nodes, visited);
+            }
         }
 
-        visited.insert(currentId);
-        const Node& node = nodes.at(currentId);
+        // EndNode: переходов нет
 
-
-        visit([&](const auto& currentNode) {
-            using T = decay_t<decltype(currentNode)>;
-
-            if constexpr (is_same_v<T, DialogueNode>) {
-                dfs(currentNode.next, nodes, visited);
-            }
-            else if constexpr (is_same_v<T, ChoiceNode>) {
-                for (const Choice& choice : currentNode.choices) {
-                    dfs(choice.next, nodes, visited);
-                }
-            }
-        }, node);
-    }
+    }, node);
+}
 
 }

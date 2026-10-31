@@ -65,11 +65,23 @@ namespace narrative {
             }
         }
 
-        NodeId startId = story.at("startNode").get<string>();
+        NodeId startId = story.at("startNode").get<string>();                          
 
-        StoryValidator::validate(loadedEngine, startId);
+        const vector<std::string> errors = StoryValidator::validate(
+            loadedEngine, startId
+        );
+
+        if (!errors.empty()) {
+            std::string message = "Story validation failed:\n";
+
+            for (const auto& error : errors) {
+                message += "- " + error + "\n";
+            }
+
+            throw std::runtime_error(message);
+        }
 
         loadedEngine.start(startId);
-        engine = move(loadedEngine);
+        engine = std::move(loadedEngine);
     }
 }

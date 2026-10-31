@@ -1,0 +1,25 @@
+
+{
+  "startNode": "start",
+  "nodes": [
+    {
+      "type": "dialogue",
+      "id": "start",
+      "speaker": "Robert",
+      "text": "Hello!",
+      "next": "missing_dialogue"
+    },
+    {
+      "type": "dialogue",
+      "id": "loop",
+      "speaker": "Robert",
+      "text": "Again!",
+      "next": "missing_target"
+    },
+    {
+      "type": "choice",
+      "id": "choice1",
+      "choices": []
+    }
+  ]
+}
