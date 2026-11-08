@@ -17,7 +17,7 @@ using json = nlohmann::json;
 
 namespace narrative {
 
-    void StoryLoader::load(const string& path, NarrativeEngine& engine) {
+    ParsedStory StoryLoader::parse(const string& path) {
         ifstream file(path);
 
         if (!file.is_open()) {
@@ -67,21 +67,40 @@ namespace narrative {
 
         NodeId startId = story.at("startNode").get<string>();                          
 
-        const vector<std::string> errors = StoryValidator::validate(
+        const vector<ValidationIssue> errors = StoryValidator::validate(
             loadedEngine, startId
+        );
+
+        return ParsedStory{
+            std::move(loadedEngine),
+            std::move(startId)
+        };
+    }
+    void StoryLoader::load(
+            const std::string& path,
+            NarrativeEngine& engine
+        )
+    {
+        ParsedStory parsed = parse(path);
+
+        const auto errors = StoryValidator::validate(
+            parsed.engine,
+            parsed.startId
         );
 
         if (!errors.empty()) {
             std::string message = "Story validation failed:\n";
 
             for (const auto& error : errors) {
-                message += "- " + error + "\n";
+                message += "- " + error.message + "\n";
             }
 
             throw std::runtime_error(message);
         }
 
-        loadedEngine.start(startId);
-        engine = std::move(loadedEngine);
+        parsed.engine.start(parsed.startId);
+        engine = std::move(parsed.engine);
     }
+
+
 }

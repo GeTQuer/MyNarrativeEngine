@@ -7,13 +7,22 @@
 #include "NarrativeEngine.hpp"
 using namespace std;
 
+    
+
+
 namespace narrative {
+    struct ParsedStory {
+        NarrativeEngine engine;
+        NodeId startId;
+    };
+
     class StoryLoader {
         public:
             static void load(
                 const string&path,
                 NarrativeEngine& engine
                 );
+            static ParsedStory parse(const std::string& path);
     };
 }
 

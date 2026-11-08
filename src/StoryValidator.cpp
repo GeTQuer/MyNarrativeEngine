@@ -6,15 +6,22 @@
 
 namespace narrative {
 
-std::vector<std::string> StoryValidator::validate(
+std::vector<ValidationIssue> StoryValidator::validate(
     const NarrativeEngine& engine,
     const NodeId& startId)
 {
-    std::vector<std::string> errors;
+    std::vector<ValidationIssue> errors;
     const auto& nodes = engine.getNodes();
 
     if (nodes.empty()) {
-        errors.push_back("Story contains no nodes");
+        errors.push_back(
+        {
+            {},
+            "Story contains no nodes",
+            ValidationSeverity::Error
+        }
+
+            );
         return errors;
     }
 
@@ -30,9 +37,13 @@ std::vector<std::string> StoryValidator::validate(
             const NodeId& next = dialogue->next;
 
             if (!nodes.contains(next)) {
-                errors.push_back(
-                    "DialogueNode {" + key +
-                    "} references unknown node {" + next + "}"
+                errors.push_back
+                (
+                    {
+                        key,
+                        "DialogueNode {" + key +"} references unknown node {" + next + "}",
+                        ValidationSeverity::Warning
+                    }
                 );
 
                 hasBrokenLinks = true;
@@ -43,7 +54,12 @@ std::vector<std::string> StoryValidator::validate(
 
             if (choiceNode->choices.empty()) {
                 errors.push_back(
-                    "ChoiceNode {" + key + "} has no choices"
+                        {
+                            choiceNode->id,
+                            "ChoiceNode {" + key + "} has no choices",
+                            ValidationSeverity::Error
+                        }
+
                 );
             }
 
@@ -52,8 +68,12 @@ std::vector<std::string> StoryValidator::validate(
 
                 if (!nodes.contains(next)) {
                     errors.push_back(
-                        "ChoiceNode {" + key +
-                        "} references unknown node {" + next + "}"
+                        {
+                            key,
+                            "ChoiceNode {" + key +"} references unknown node {" + next + "}",
+                            ValidationSeverity::Warning
+                        }
+
                     );
 
                     hasBrokenLinks = true;
@@ -67,14 +87,20 @@ std::vector<std::string> StoryValidator::validate(
 
     // 2. Проверяем наличие EndNode
     if (!hasEndNode) {
-        errors.push_back("Story contains no EndNode");
+        errors.push_back({
+            {},
+            "Story contains no EndNode",
+            ValidationSeverity::Error
+        });
     }
 
     // 3. Проверяем начальный узел
     if (!nodes.contains(startId)) {
-        errors.push_back(
-            "Start node {" + startId + "} does not exist"
-        );
+        errors.push_back({
+            {},
+            "Start node {" + startId + "} does not exist",
+            ValidationSeverity::Error
+        });
     }
 
     // 4. Если ссылки или startId некорректны,
@@ -89,9 +115,11 @@ std::vector<std::string> StoryValidator::validate(
 
     for (const auto& [id, node] : nodes) {
         if (!visited.contains(id)) {
-            errors.push_back(
-                "Node {" + id + "} is unreachable"
-            );
+            errors.push_back({
+                id,
+                "Node {" + id + "} is unreachable",
+                ValidationSeverity::Error
+            });
         }
     }
 
